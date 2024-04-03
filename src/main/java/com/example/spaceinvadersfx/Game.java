@@ -3,15 +3,12 @@
 package com.example.spaceinvadersfx;
 
 import javafx.application.Application;
-import javafx.geometry.Insets;
+import javafx.event.EventHandler;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
-import javafx.scene.paint.*;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
-import java.io.File;
 
 public class Game extends Application {
     public static void main(String[] args) { launch(args); }
@@ -19,47 +16,24 @@ public class Game extends Application {
     @Override
     public void start(Stage stage) throws Exception{
         stage.setTitle("Space Invaders");
-        VBox root = new VBox();
-        Pane pane = new Pane();
-        root.setBackground(new Background(
-                new BackgroundFill(
-                        new LinearGradient(0, 0, 0, 1, true,
-                                CycleMethod.NO_CYCLE,
-                                new Stop(0, Color.web("#454545")),
-                                new Stop(1, Color.web("#454590"))
-                        ), CornerRadii.EMPTY, Insets.EMPTY
-                ),
-                new BackgroundFill(
-                        new ImagePattern(
-                                new Image(new File("src/main/resources/stars.png").toURI().toString()),
-                                0, 0, 128, 128, false
-                        ), CornerRadii.EMPTY, Insets.EMPTY
-                ),
-                new BackgroundFill(
-                        new RadialGradient(
-                                0, 0, 0.5, 0.5, 0.5, true,
-                                CycleMethod.NO_CYCLE,
-                                new Stop(0, Color.web("#FFFFFF33")),
-                                new Stop(1, Color.web("#00000033"))),
-                        CornerRadii.EMPTY, Insets.EMPTY
-                )
-        ));
+        Board board = new Board();
+        Text text = new Text("Teste");
+        Scene scene = new Scene(board, 750, 750);
 
-        // load ship image
-        Image ship = new Image(new File("src/main/resources/ship.png").toURI().toString());
-        ImageView imageView = new ImageView(ship);
+        EventHandler<KeyEvent> filter = new EventHandler<KeyEvent>() {
+            @Override
+            public void handle(KeyEvent keyEvent) {
+                System.out.println(keyEvent.getCode());
+                if(keyEvent.getCode().toString().equals("LEFT") || keyEvent.getCode().toString().equals("RIGHT")) {
+                    board.moveShip(keyEvent.getCode());
+                } else if (keyEvent.getCode().toString().equals("SPACE")) {
+                    board.createShoot(keyEvent.getCode());
+                }
+            }
+        };
 
-        imageView.setFitWidth(70);
-        imageView.setFitHeight(70);
-        imageView.setLayoutY(750);
-        imageView.setSmooth(true);
-        imageView.setCache(true);
-
-        pane.getChildren().add(imageView);
-        root.getChildren().add(pane);
-        Scene scene = new Scene(root, 900, 900);
+        scene.addEventFilter(KeyEvent.ANY, filter);
         stage.setScene(scene);
-
         stage.show();
     }
 }
