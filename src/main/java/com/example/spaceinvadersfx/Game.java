@@ -23,10 +23,13 @@ public class Game extends Application {
         EventHandler<KeyEvent> filter = new EventHandler<KeyEvent>() {
             @Override
             public void handle(KeyEvent keyEvent) {
-                System.out.println(keyEvent.getCode());
-                if(keyEvent.getCode().toString().equals("LEFT") || keyEvent.getCode().toString().equals("RIGHT")) {
+                if((
+                        keyEvent.getCode().toString().equals("LEFT") && keyEvent.getEventType().toString().equals("KEY_PRESSED")) ||
+                        keyEvent.getCode().toString().equals("RIGHT") && keyEvent.getEventType().toString().equals("KEY_PRESSED"))
+                {
                     board.moveShip(keyEvent.getCode());
-                } else if (keyEvent.getCode().toString().equals("SPACE")) {
+                }
+                else if (keyEvent.getCode().toString().equals("SPACE") && keyEvent.getEventType().toString().equals("KEY_PRESSED")) {
                     board.createShoot(keyEvent.getCode());
                 }
             }
