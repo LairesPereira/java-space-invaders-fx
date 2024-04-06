@@ -8,6 +8,7 @@ public class Enemy {
     // # SHIP CONSTANTS
     // ship width and height on grid are 5x3 cols/rows
     ImageView shipImage;
+    public int life = 5;
     int INITIAL_POSITION_X = 22;
     int INITIAL_POSITION_Y = 5;
     int ENEMY_WIDTH = 70;
@@ -16,7 +17,7 @@ public class Enemy {
     public int ENEMY_WIDTH_PIXELS = 5;
     int positionX = INITIAL_POSITION_X;
     int positionY = INITIAL_POSITION_Y;
-
+    public boolean isDead = false;
 
     public Enemy() {
         this.shipImage = buildShip();
@@ -36,6 +37,13 @@ public class Enemy {
         this.shipImage.setLayoutY(INITIAL_POSITION_Y);
         this.shipImage.setCache(true);
         return shipImage;
+    }
+
+    public void takeDamage(int damagePower) {
+        this.life -= damagePower;
+        if(this.life <= 0) {
+            this.isDead = true;
+        }
     }
 
     public void setPositionX(int positionX) {

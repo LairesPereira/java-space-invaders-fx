@@ -70,6 +70,7 @@ public class Board extends GridPane{
                                 shoot.remove();
                             } else if (didHitEnemy(shootTravel)) {
                                 destroyImageView(shootTravel.image);
+                                shoot.remove();
                             }
                             }
                     }
@@ -89,14 +90,15 @@ public class Board extends GridPane{
             if(enemyCheck != null) {
                 if (shoot.positionY >= getRowIndex(enemyCheck.shipImage) && shoot.positionY <= (getRowIndex(enemyCheck.shipImage) + enemyCheck.ENEMY_HEIGTH_PIXELS)){
                     if((shoot.positionX >= getColumnIndex(enemyCheck.shipImage) - 2) && (shoot.positionX <= (getColumnIndex(enemyCheck.shipImage) + 2))){
-                        enemy.remove();
-                        destroyImageView(enemyCheck.shipImage);
-                        System.out.printf("\nShot Pos X: %d", shoot.positionX);
-                        System.out.printf("\nShot Pos Y: %d", shoot.positionY);
-                        System.out.printf("\nShip Y Pos: %d", getRowIndex(enemyCheck.shipImage));
-                        System.out.printf("\nShip X Pos: %d", getColumnIndex(enemyCheck.shipImage));
-                        System.out.println("\nhit");
-                        return true;
+                        if(enemyCheck.isDead) {
+                            enemy.remove();
+                            destroyImageView(enemyCheck.shipImage);
+                            return true;
+                        } else {
+                            enemyCheck.takeDamage(shoot.power);
+                            destroyImageView(shoot.image);
+                            return true;
+                        }
                 }
             }
         }

@@ -22,7 +22,7 @@ public class Ship {
     }
 
     public Shoot newShoot() {
-        Shoot shoot = new Shoot(this.positionX, this.positionY, 10, 1);
+        Shoot shoot = new Shoot(this.positionX, this.positionY, 1, 1);
         return shoot;
     }
 
