@@ -3,32 +3,43 @@ package com.example.spaceinvadersfx;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
 import javafx.geometry.Side;
+import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
-import javafx.scene.paint.*;
 
+import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
+import java.time.temporal.TemporalUnit;
 import java.util.Iterator;
 
 public class Board extends GridPane{
-    public final boolean SHOW_GRID = false;
+    public final boolean SHOW_GRID = true;
+    private int MAX_ENEMIES = 5;
     private final int NUM_COLS = 50;
     private final int NUM_ROWS = 50;
 
     Ship ship = new Ship();
     Enemy enemy = new Enemy();
+    ObservableList<Enemy> enemies = FXCollections.observableArrayList();
     ObservableList<Shoot> shootsTraveling = FXCollections.observableArrayList();
 
     public Board() {
         buildGrid();
         setBackgroundSpace();
-        setShipInitialPos(this.ship, this.enemy);
+        setShipInitialPos(this.ship);
+        setEnemies(this.enemy);
         shootsTravelingThread();
+    }
+
+    private void setEnemies(Enemy enemy) {
+        enemies.add(enemy);
+        getChildren().add(enemy.shipImage);
+        setColumnIndex(enemy.shipImage, enemy.INITIAL_POSITION_X);
+        setRowIndex(enemy.shipImage, enemy.INITIAL_POSITION_Y);
     }
 
     private void destroyImageView(ImageView shoot) {
@@ -57,8 +68,10 @@ public class Board extends GridPane{
                             if(shootTravel.positionY <= 3) {
                                 destroyImageView(shootTravel.image);
                                 shoot.remove();
+                            } else if (didHitEnemy(shootTravel)) {
+                                destroyImageView(shootTravel.image);
                             }
-                        }
+                            }
                     }
                     try {
                         Thread.sleep(70);
@@ -68,6 +81,27 @@ public class Board extends GridPane{
                 }
             }
         }).start();
+    }
+
+    private boolean didHitEnemy(Shoot shoot) {
+        for (Iterator<Enemy> enemy = enemies.iterator(); enemy.hasNext();) {
+            Enemy enemyCheck = enemy.next();
+            if(enemyCheck != null) {
+                if (shoot.positionY >= getRowIndex(enemyCheck.shipImage) && shoot.positionY <= (getRowIndex(enemyCheck.shipImage) + enemyCheck.ENEMY_HEIGTH_PIXELS)){
+                    if((shoot.positionX >= getColumnIndex(enemyCheck.shipImage) - 2) && (shoot.positionX <= (getColumnIndex(enemyCheck.shipImage) + 2))){
+                        enemy.remove();
+                        destroyImageView(enemyCheck.shipImage);
+                        System.out.printf("\nShot Pos X: %d", shoot.positionX);
+                        System.out.printf("\nShot Pos Y: %d", shoot.positionY);
+                        System.out.printf("\nShip Y Pos: %d", getRowIndex(enemyCheck.shipImage));
+                        System.out.printf("\nShip X Pos: %d", getColumnIndex(enemyCheck.shipImage));
+                        System.out.println("\nhit");
+                        return true;
+                }
+            }
+        }
+    }
+    return false;
     }
 
     public void buildGrid() {
@@ -83,6 +117,7 @@ public class Board extends GridPane{
             getRowConstraints().add(rowConst);
         }
     }
+
 
     public void setBackgroundSpace() {
         setBackground(
@@ -103,11 +138,8 @@ public class Board extends GridPane{
         );
     }
 
-    public void setShipInitialPos(Ship ship, Enemy enemy) {
+    public void setShipInitialPos(Ship ship) {
         getChildren().add(ship.shipImage);
-        getChildren().add(enemy.shipImage);
-        setColumnIndex(enemy.shipImage, enemy.INITIAL_POSITION_X);
-        setRowIndex(enemy.shipImage, enemy.INITIAL_POSITION_Y);
         setColumnIndex(ship.shipImage, ship.INITIAL_POSITION_X);
         setRowIndex(ship.shipImage, ship.INITIAL_POSITION_Y);
     }
