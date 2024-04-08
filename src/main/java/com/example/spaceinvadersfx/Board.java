@@ -2,44 +2,77 @@ package com.example.spaceinvadersfx;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Side;
-import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
-
-import java.io.Console;
 import java.io.File;
-import java.io.FileInputStream;
-import java.time.temporal.TemporalUnit;
 import java.util.Iterator;
 
-public class Board extends GridPane{
+public class Board extends GridPane {
     public final boolean SHOW_GRID = true;
     private int MAX_ENEMIES = 5;
     private final int NUM_COLS = 50;
     private final int NUM_ROWS = 50;
 
     Ship ship = new Ship();
-    Enemy enemy = new Enemy();
     ObservableList<Enemy> enemies = FXCollections.observableArrayList();
     ObservableList<Shoot> shootsTraveling = FXCollections.observableArrayList();
+    public ObservableList<Shoot> enemiesShoots = FXCollections.observableArrayList();
 
     public Board() {
         buildGrid();
         setBackgroundSpace();
         setShipInitialPos(this.ship);
-        setEnemies(this.enemy);
+        setEnemies();
+        addListener();
         shootsTravelingThread();
+     }
+
+    private void setEnemies() {
+        int aux = 0;
+        int lastInitialPosition = 3;
+        while (aux < MAX_ENEMIES) {
+            Enemy newEnemy = new Enemy();
+            newEnemy.positionX = lastInitialPosition;
+            enemies.add(newEnemy);
+            newEnemy.attack(enemiesShoots);
+            getChildren().add(newEnemy.shipImage);
+            setColumnIndex(newEnemy.shipImage, newEnemy.positionX);
+            setRowIndex(newEnemy.shipImage, newEnemy.INITIAL_POSITION_Y);
+            lastInitialPosition += 10;
+            aux++;
+        }
     }
 
-    private void setEnemies(Enemy enemy) {
-        enemies.add(enemy);
-        getChildren().add(enemy.shipImage);
-        setColumnIndex(enemy.shipImage, enemy.INITIAL_POSITION_X);
-        setRowIndex(enemy.shipImage, enemy.INITIAL_POSITION_Y);
+    public void addListener() {
+        enemiesShoots.addListener(new ListChangeListener<com.example.spaceinvadersfx.Shoot>() {
+            @Override
+            public void onChanged(Change<? extends com.example.spaceinvadersfx.Shoot> change) {
+                while (change.next()){
+                    if(change.wasAdded()) {
+                        for (Shoot n: change.getAddedSubList()) {
+                            System.out.println(n);
+                            createImageShootEnemy(n);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    private void createImageShootEnemy(Shoot shoot) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                getChildren().add(shoot.image);
+                setColumnIndex(shoot.image, shoot.positionX + 2);
+                setRowIndex(shoot.image, shoot.positionY - 3);
+            }
+        });
     }
 
     private void destroyImageView(ImageView shoot) {
@@ -55,7 +88,6 @@ public class Board extends GridPane{
     }
 
     private void shootsTravelingThread() {
-        // ACESSO EM BANCOS DE DADOS PODEM SER EM THREADS SEPARADAS?
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -68,12 +100,26 @@ public class Board extends GridPane{
                             if(shootTravel.positionY <= 3) {
                                 destroyImageView(shootTravel.image);
                                 shoot.remove();
-                            } else if (didHitEnemy(shootTravel)) {
+                            } if (didHitEnemy(shootTravel)) {
                                 destroyImageView(shootTravel.image);
                                 shoot.remove();
                             }
                             }
                     }
+
+                    if (!enemiesShoots.isEmpty()) {
+                        for (Iterator<Shoot> enemyShoot = enemiesShoots.iterator(); enemyShoot.hasNext();) {
+                            Shoot enemyShootTravel = enemyShoot.next();
+                            setColumnIndex(enemyShootTravel.image, enemyShootTravel.positionX + 2);
+                            setRowIndex(enemyShootTravel.image, enemyShootTravel.positionY + 3);
+                            enemyShootTravel.positionY += enemyShootTravel.speed;
+                            if (enemyShootTravel.positionY > 47) {
+                                destroyImageView(enemyShootTravel.image);
+                                enemyShoot.remove();
+                            }
+                        }
+                    }
+
                     try {
                         Thread.sleep(70);
                     } catch (InterruptedException e) {
@@ -119,7 +165,6 @@ public class Board extends GridPane{
             getRowConstraints().add(rowConst);
         }
     }
-
 
     public void setBackgroundSpace() {
         setBackground(

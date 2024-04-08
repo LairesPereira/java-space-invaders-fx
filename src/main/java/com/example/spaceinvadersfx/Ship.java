@@ -4,7 +4,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 import java.io.File;
-import java.util.ArrayList;
 
 public class Ship {
     // # SHIP CONSTANTS
@@ -22,7 +21,7 @@ public class Ship {
     }
 
     public Shoot newShoot() {
-        Shoot shoot = new Shoot(this.positionX, this.positionY, 1, 1);
+        Shoot shoot = new Shoot(this.positionX, this.positionY, 1, 1, "player");
         return shoot;
     }
 

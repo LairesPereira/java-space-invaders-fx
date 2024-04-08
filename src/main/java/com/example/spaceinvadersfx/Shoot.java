@@ -13,17 +13,22 @@ public class Shoot  {
     int power;
     int speed;
 
-    public Shoot(int positionX, int positionY, int power, int speed) {
+    public Shoot(int positionX, int positionY, int power, int speed, String shipType) {
         this.positionX = positionX;
         this.positionY = positionY;
         this.power = power;
         this.speed = speed;
-        this.image = createShootImageView();
+        this.image = createShootImageView(shipType);
     }
 
-    private ImageView createShootImageView() {
-        Image shotImageSRC = new Image(new File("src/main/resources/shot.png").toURI().toString());
-        ImageView shoot = new ImageView(shotImageSRC);
+    private ImageView createShootImageView(String shipType) {
+        Image shootImageSRC;
+        if(shipType.equals("enemy")) {
+            shootImageSRC = new Image(new File("src/main/resources/enemyShoot.png").toURI().toString());
+        } else {
+            shootImageSRC = new Image(new File("src/main/resources/shot.png").toURI().toString());
+        }
+        ImageView shoot = new ImageView(shootImageSRC);
         shoot.setFitWidth(BULLET_WIDTH);
         shoot.setFitHeight(BULLET_HEIGHT);
         this.image = shoot;

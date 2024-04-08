@@ -1,13 +1,19 @@
 package com.example.spaceinvadersfx;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import java.io.File;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class Enemy {
     // # SHIP CONSTANTS
     // ship width and height on grid are 5x3 cols/rows
     ImageView shipImage;
+    ObservableList<Shoot> shootsFired = FXCollections.observableArrayList();
     public int life = 5;
     int INITIAL_POSITION_X = 22;
     int INITIAL_POSITION_Y = 5;
@@ -23,8 +29,22 @@ public class Enemy {
         this.shipImage = buildShip();
     }
 
+    public void attack(ObservableList<Shoot> shoots) {
+        Timer timer = new Timer();
+        timer.schedule( new TimerTask() {
+            public void run() {
+                if(isDead) {
+                    timer.cancel();
+                    timer.purge();
+                    return;
+                }
+                shoots.add(newShoot());
+            }
+        }, 0,  new Random().nextInt(1000, 2500));
+    }
+
     public Shoot newShoot() {
-        Shoot shoot = new Shoot(this.positionX, this.positionY, 10, 1);
+        Shoot shoot = new Shoot(this.positionX, this.positionY + 3, 10, 1, "enemy");
         return shoot;
     }
 
@@ -33,8 +53,8 @@ public class Enemy {
         this.shipImage = new ImageView(shipImageSRC);
         this.shipImage.setFitWidth(ENEMY_WIDTH);
         this.shipImage.setFitHeight(ENEMY_HEIGTH);
-        this.shipImage.setLayoutX(INITIAL_POSITION_X);
-        this.shipImage.setLayoutY(INITIAL_POSITION_Y);
+        this.shipImage.setLayoutX(this.positionX);
+        this.shipImage.setLayoutY(this.positionY);
         this.shipImage.setCache(true);
         return shipImage;
     }
@@ -44,9 +64,5 @@ public class Enemy {
         if(this.life <= 0) {
             this.isDead = true;
         }
-    }
-
-    public void setPositionX(int positionX) {
-        this.positionX = positionX;
     }
 }
