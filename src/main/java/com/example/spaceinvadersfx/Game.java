@@ -8,7 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-
+import javafx.stage.StageStyle;
 
 public class Game extends Application {
     public static void main(String[] args) { launch(args); }
@@ -37,6 +37,7 @@ public class Game extends Application {
 
         scene.addEventFilter(KeyEvent.ANY, filter);
         stage.setScene(scene);
+        stage.setResizable(false);
         stage.show();
     }
 }

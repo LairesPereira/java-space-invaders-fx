@@ -4,29 +4,75 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
+import javafx.geometry.Side;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
-import javafx.scene.paint.*;
-
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Iterator;
 
-public class Board extends GridPane{
+public class Board extends GridPane {
+    public final boolean SHOW_GRID = false;
+    private int MAX_ENEMIES = 5;
     private final int NUM_COLS = 50;
     private final int NUM_ROWS = 50;
 
     Ship ship = new Ship();
+    ObservableList<Enemy> enemies = FXCollections.observableArrayList();
     ObservableList<Shoot> shootsTraveling = FXCollections.observableArrayList();
+    public ObservableList<Shoot> enemiesShoots = FXCollections.observableArrayList();
 
     public Board() {
         buildGrid();
         setBackgroundSpace();
         setShipInitialPos(this.ship);
+        setEnemies();
+        addListener();
         shootsTravelingThread();
+     }
+
+    private void setEnemies() {
+        int aux = 0;
+        int lastInitialPosition = 4;
+        while (aux < MAX_ENEMIES) {
+            Enemy newEnemy = new Enemy();
+            newEnemy.positionX = lastInitialPosition;
+            enemies.add(newEnemy);
+            newEnemy.attack(enemiesShoots);
+            getChildren().add(newEnemy.shipImage);
+            setColumnIndex(newEnemy.shipImage, newEnemy.positionX);
+            setRowIndex(newEnemy.shipImage, newEnemy.INITIAL_POSITION_Y);
+            lastInitialPosition += 10;
+            aux++;
+        }
+    }
+
+    public void addListener() {
+        enemiesShoots.addListener(new ListChangeListener<com.example.spaceinvadersfx.Shoot>() {
+            @Override
+            public void onChanged(Change<? extends com.example.spaceinvadersfx.Shoot> change) {
+                while (change.next()){
+                    if(change.wasAdded()) {
+                        for (Shoot n: change.getAddedSubList()) {
+                            System.out.println(n);
+                            createImageShootEnemy(n);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    private void createImageShootEnemy(Shoot shoot) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                getChildren().add(shoot.image);
+                setColumnIndex(shoot.image, shoot.positionX + 2);
+                setRowIndex(shoot.image, shoot.positionY - 3);
+            }
+        });
     }
 
     private void destroyImageView(ImageView shoot) {
@@ -42,11 +88,15 @@ public class Board extends GridPane{
     }
 
     private void shootsTravelingThread() {
-        // ACESSO EM BANCOS DE DADOS PODEM SER EM THREADS SEPARADAS?
         new Thread(new Runnable() {
             @Override
             public void run() {
                 while (true) {
+                    if(ship.isDead) {
+                        for (Enemy enemy: enemies) {
+                            enemy.purgeTimer();
+                        }
+                    }
                     if (!shootsTraveling.isEmpty()) {
                             for (Iterator<Shoot> shoot = shootsTraveling.iterator(); shoot.hasNext();) {
                             Shoot shootTravel = shoot.next();
@@ -55,6 +105,27 @@ public class Board extends GridPane{
                             if(shootTravel.positionY <= 3) {
                                 destroyImageView(shootTravel.image);
                                 shoot.remove();
+                            }
+                            if (didHitEnemy(shootTravel)) {
+                                destroyImageView(shootTravel.image);
+                                shoot.remove();
+                            }
+                            }
+                    }
+
+                    if (!enemiesShoots.isEmpty()) {
+                        for (Iterator<Shoot> enemyShoot = enemiesShoots.iterator(); enemyShoot.hasNext();) {
+                            Shoot enemyShootTravel = enemyShoot.next();
+                            setColumnIndex(enemyShootTravel.image, enemyShootTravel.positionX + 2);
+                            setRowIndex(enemyShootTravel.image, enemyShootTravel.positionY + 3);
+                            enemyShootTravel.positionY += enemyShootTravel.speed;
+                            if (enemyShootTravel.positionY > 45) {
+                                destroyImageView(enemyShootTravel.image);
+                                enemyShoot.remove();
+                            }
+                            if(didHitPlayer(enemyShootTravel)) {
+                                destroyImageView(enemyShootTravel.image);
+                                enemyShoot.remove();
                             }
                         }
                     }
@@ -68,8 +139,47 @@ public class Board extends GridPane{
         }).start();
     }
 
+    private boolean didHitPlayer(Shoot shoot) {
+        if(shoot.positionY >= (getRowIndex(ship.shipImage) - ship.SHIP_HEIGTH_PIXELS) && shoot.positionY <= (getRowIndex(ship.shipImage))){
+            if(shoot.positionX >= getColumnIndex(ship.shipImage) - 2 && (shoot.positionX <= (getColumnIndex(ship.shipImage) + 2))) {
+                if(ship.isDead) {
+                    System.out.println("GAME OVER");
+                    destroyImageView(ship.shipImage);
+                    setShipExplosion();
+                    return true;
+                } else {
+                    ship.shipTakeDamage(shoot.power);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean didHitEnemy(Shoot shoot) {
+        for (Iterator<Enemy> enemy = enemies.iterator(); enemy.hasNext();) {
+            Enemy enemyCheck = enemy.next();
+            if(enemyCheck != null) {
+                if (shoot.positionY >= getRowIndex(enemyCheck.shipImage) && shoot.positionY <= (getRowIndex(enemyCheck.shipImage) + enemyCheck.ENEMY_HEIGTH_PIXELS)){
+                    if((shoot.positionX >= getColumnIndex(enemyCheck.shipImage) - 2) && (shoot.positionX <= (getColumnIndex(enemyCheck.shipImage) + 2))){
+                        if(enemyCheck.isDead) {
+                            enemy.remove();
+                            destroyImageView(enemyCheck.shipImage);
+                            return true;
+                        } else {
+                            enemyCheck.takeDamage(shoot.power);
+                            destroyImageView(shoot.image);
+                            return true;
+                        }
+                }
+            }
+        }
+    }
+    return false;
+    }
+
     public void buildGrid() {
-        setGridLinesVisible(true);
+        setGridLinesVisible(SHOW_GRID);
         for (int i = 0; i < NUM_COLS; i++) {
             ColumnConstraints colConst = new ColumnConstraints();
             colConst.setPercentWidth(100.0 / NUM_COLS);
@@ -83,29 +193,34 @@ public class Board extends GridPane{
     }
 
     public void setBackgroundSpace() {
-        setBackground(new Background(
-                new BackgroundFill(
-                        new LinearGradient(0, 0, 0, 1, true,
-                                CycleMethod.NO_CYCLE,
-                                new Stop(0, Color.web("#454545")),
-                                new Stop(1, Color.web("#454590"))
-                        ), CornerRadii.EMPTY, Insets.EMPTY
-                ),
-                new BackgroundFill(
-                        new ImagePattern(
-                                new Image(new File("src/main/resources/stars.png").toURI().toString()),
-                                0, 0, 128, 128, false
-                        ), CornerRadii.EMPTY, Insets.EMPTY
-                ),
-                new BackgroundFill(
-                        new RadialGradient(
-                                0, 0, 0.5, 0.5, 0.5, true,
-                                CycleMethod.NO_CYCLE,
-                                new Stop(0, Color.web("#FFFFFF33")),
-                                new Stop(1, Color.web("#00000033"))),
-                        CornerRadii.EMPTY, Insets.EMPTY
+        setBackground(
+                new Background(
+                        new BackgroundImage(
+                                new Image(new File("src/main/resources/space.png").toURI().toString()),
+                                BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT,
+                                new BackgroundPosition(Side.LEFT, 0, true, Side.BOTTOM, 0, true),
+                                new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, true, true, false, true)
+                        ),
+                        new BackgroundImage(
+                                new Image(new File("src/main/resources/stars2.png").toURI().toString()),
+                                BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT,
+                                new BackgroundPosition(Side.LEFT, 0, true, Side.BOTTOM, 0, true),
+                                new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, true, true, false, true)
+                        )
                 )
-        ));
+        );
+    }
+
+    public void setShipExplosion() {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                ImageView shipExplosion = ship.explosion();
+                getChildren().add(shipExplosion);
+                setColumnIndex(shipExplosion, ship.positionX);
+                setRowIndex(shipExplosion, ship.positionY);
+            }
+        });
     }
 
     public void setShipInitialPos(Ship ship) {
@@ -126,7 +241,7 @@ public class Board extends GridPane{
 
     public void createShoot(KeyCode code) {
         Shoot newShoot = this.ship.newShoot();
-        shootsTraveling.add(newShoot);
+        shootsTraveling .add(newShoot);
         getChildren().add(newShoot.image);
         setColumnIndex(newShoot.image, newShoot.positionX + 2);
         setRowIndex(newShoot.image, newShoot.positionY - 3);
