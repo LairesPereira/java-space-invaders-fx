@@ -13,7 +13,7 @@ import java.io.File;
 import java.util.Iterator;
 
 public class Board extends GridPane {
-    public final boolean SHOW_GRID = true;
+    public final boolean SHOW_GRID = false;
     private int MAX_ENEMIES = 5;
     private final int NUM_COLS = 50;
     private final int NUM_ROWS = 50;
@@ -34,7 +34,7 @@ public class Board extends GridPane {
 
     private void setEnemies() {
         int aux = 0;
-        int lastInitialPosition = 3;
+        int lastInitialPosition = 4;
         while (aux < MAX_ENEMIES) {
             Enemy newEnemy = new Enemy();
             newEnemy.positionX = lastInitialPosition;
@@ -92,6 +92,11 @@ public class Board extends GridPane {
             @Override
             public void run() {
                 while (true) {
+                    if(ship.isDead) {
+                        for (Enemy enemy: enemies) {
+                            enemy.purgeTimer();
+                        }
+                    }
                     if (!shootsTraveling.isEmpty()) {
                             for (Iterator<Shoot> shoot = shootsTraveling.iterator(); shoot.hasNext();) {
                             Shoot shootTravel = shoot.next();
@@ -100,7 +105,8 @@ public class Board extends GridPane {
                             if(shootTravel.positionY <= 3) {
                                 destroyImageView(shootTravel.image);
                                 shoot.remove();
-                            } if (didHitEnemy(shootTravel)) {
+                            }
+                            if (didHitEnemy(shootTravel)) {
                                 destroyImageView(shootTravel.image);
                                 shoot.remove();
                             }
@@ -113,13 +119,16 @@ public class Board extends GridPane {
                             setColumnIndex(enemyShootTravel.image, enemyShootTravel.positionX + 2);
                             setRowIndex(enemyShootTravel.image, enemyShootTravel.positionY + 3);
                             enemyShootTravel.positionY += enemyShootTravel.speed;
-                            if (enemyShootTravel.positionY > 47) {
+                            if (enemyShootTravel.positionY > 45) {
+                                destroyImageView(enemyShootTravel.image);
+                                enemyShoot.remove();
+                            }
+                            if(didHitPlayer(enemyShootTravel)) {
                                 destroyImageView(enemyShootTravel.image);
                                 enemyShoot.remove();
                             }
                         }
                     }
-
                     try {
                         Thread.sleep(70);
                     } catch (InterruptedException e) {
@@ -128,6 +137,23 @@ public class Board extends GridPane {
                 }
             }
         }).start();
+    }
+
+    private boolean didHitPlayer(Shoot shoot) {
+        if(shoot.positionY >= (getRowIndex(ship.shipImage) - ship.SHIP_HEIGTH_PIXELS) && shoot.positionY <= (getRowIndex(ship.shipImage))){
+            if(shoot.positionX >= getColumnIndex(ship.shipImage) - 2 && (shoot.positionX <= (getColumnIndex(ship.shipImage) + 2))) {
+                if(ship.isDead) {
+                    System.out.println("GAME OVER");
+                    destroyImageView(ship.shipImage);
+                    setShipExplosion();
+                    return true;
+                } else {
+                    ship.shipTakeDamage(shoot.power);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private boolean didHitEnemy(Shoot shoot) {
@@ -183,6 +209,18 @@ public class Board extends GridPane {
                         )
                 )
         );
+    }
+
+    public void setShipExplosion() {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                ImageView shipExplosion = ship.explosion();
+                getChildren().add(shipExplosion);
+                setColumnIndex(shipExplosion, ship.positionX);
+                setRowIndex(shipExplosion, ship.positionY);
+            }
+        });
     }
 
     public void setShipInitialPos(Ship ship) {

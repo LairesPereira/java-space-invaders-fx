@@ -14,6 +14,7 @@ public class Enemy {
     // ship width and height on grid are 5x3 cols/rows
     ImageView shipImage;
     ObservableList<Shoot> shootsFired = FXCollections.observableArrayList();
+    Timer timer = new Timer();
     public int life = 5;
     int INITIAL_POSITION_X = 22;
     int INITIAL_POSITION_Y = 5;
@@ -30,7 +31,6 @@ public class Enemy {
     }
 
     public void attack(ObservableList<Shoot> shoots) {
-        Timer timer = new Timer();
         timer.schedule( new TimerTask() {
             public void run() {
                 if(isDead) {
@@ -44,8 +44,7 @@ public class Enemy {
     }
 
     public Shoot newShoot() {
-        Shoot shoot = new Shoot(this.positionX, this.positionY + 3, 10, 1, "enemy");
-        return shoot;
+        return new Shoot(this.positionX, this.positionY + 3, 1, 1, "enemy");
     }
 
     public ImageView buildShip() {
@@ -64,5 +63,10 @@ public class Enemy {
         if(this.life <= 0) {
             this.isDead = true;
         }
+    }
+
+    public void purgeTimer() {
+        this.timer.cancel();
+        this.timer.purge();
     }
 }

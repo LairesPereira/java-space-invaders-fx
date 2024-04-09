@@ -38,7 +38,6 @@ public class Game extends Application {
         scene.addEventFilter(KeyEvent.ANY, filter);
         stage.setScene(scene);
         stage.setResizable(false);
-//        stage.initStyle(StageStyle.UNDECORATED);
         stage.show();
     }
 }
